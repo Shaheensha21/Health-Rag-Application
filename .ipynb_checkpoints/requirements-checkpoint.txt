@@ -1,0 +1,16 @@
+streamlit
+pandas
+numpy
+scikit-learn
+nltk
+spacy
+transformers
+torch
+pypdf
+langchain==0.2.35
+langchain-community==0.0.65
+langchain-google-genai==0.0.8
+langchain-text-splitters==0.0.7
+langchain-huggingface==0.0.6
+sentence-transformers==2.2.2
+chromadb==0.3.32
