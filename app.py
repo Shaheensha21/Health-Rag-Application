@@ -18,50 +18,39 @@ st.set_page_config(
 )
 
 # ---------------------------
-# Custom CSS
+# UI Styling
 # ---------------------------
 st.markdown(
     """
     <style>
     .stApp {
         background: linear-gradient(120deg, #d0e7f9, #ffffff);
-        color: #1f2937;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     .title {
-        font-size: 2.5rem;
+        font-size: 2.4rem;
         font-weight: bold;
         color: #0b3d91;
         text-align: center;
-        margin-bottom: 0.2rem;
     }
     .subtitle {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         text-align: center;
         margin-bottom: 1.5rem;
-    }
-    div.stTextInput>div>div>input {
-        height: 50px;
-        font-size: 1.1rem;
-        border-radius: 10px;
-        padding-left: 15px;
     }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# ---------------------------
-# Title
-# ---------------------------
 st.markdown('<div class="title">💊 Health Chat Assistant</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="subtitle">Ask your health-related questions and get concise, professional answers</div>',
+    '<div class="subtitle">Ask health questions and get concise, professional answers</div>',
     unsafe_allow_html=True
 )
 
 # ---------------------------
-# Load Vector DB
+# Load Vector Store
 # ---------------------------
 with st.spinner("Loading health knowledge base..."):
     embeddings = HuggingFaceEmbeddings(
@@ -76,12 +65,12 @@ with st.spinner("Loading health knowledge base..."):
     retriever = vector_db.as_retriever(search_kwargs={"k": 3})
 
 # ---------------------------
-# Initialize Gemini LLM
+# Initialize Gemini LLM (CORRECT)
 # ---------------------------
 llm = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash",
     temperature=0.2,
-    google_api_key=os.getenv("GEMINI_API_KEY")
+    api_key=os.getenv("GEMINI_API_KEY")
 )
 
 # ---------------------------
@@ -101,7 +90,7 @@ Question:
 {question}
 
 Answer in no more than 3 sentences.
-If the context does not contain relevant information, say:
+If the context is insufficient, say:
 "I'm sorry, I cannot provide an answer based on the available health documents."
 """
 )
@@ -118,7 +107,7 @@ rag_chain = (
 # ---------------------------
 # User Input
 # ---------------------------
-question = st.text_input("Enter your health-related query:")
+question = st.text_input("Enter your health-related question:")
 
 if question:
     with st.spinner("Generating answer..."):
@@ -133,7 +122,7 @@ if question:
                     st.markdown(f"- {sentence.strip()}.")
 
         except Exception as e:
-            st.error("❌ An error occurred while generating the response.")
+            st.error("❌ Error while generating response")
             st.exception(e)
 
 # ---------------------------
@@ -151,7 +140,7 @@ st.markdown(
         margin-top: 20px;
     ">
     ⚠️ Disclaimer: This chatbot provides general health information only.
-    It is not a substitute for professional medical advice, diagnosis, or treatment.
+    It is not a substitute for professional medical advice.
     Always consult a qualified healthcare provider.
     </div>
     """,
