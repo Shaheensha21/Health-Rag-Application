@@ -1,12 +1,12 @@
 streamlit>=1.29.0
 
-langchain
-langchain-community
-langchain-text-splitters
-langchain-google-genai
+langchain>=0.2.14
+langchain-community>=0.2.14
+langchain-text-splitters>=0.2.2
+langchain-google-genai>=1.0.8
 
-chromadb
-sentence-transformers
-pypdf
+chromadb>=0.4.24
+sentence-transformers>=2.6.1
+pypdf>=4.0.0
 
-python-dotenv
+python-dotenv>=1.0.1
