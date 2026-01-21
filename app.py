@@ -1,6 +1,6 @@
 # app.py
-import os
 import streamlit as st
+import os
 
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
@@ -18,41 +18,18 @@ st.set_page_config(
 )
 
 # ---------------------------
-# UI Styling
+# Title
 # ---------------------------
+st.markdown("<h1 style='text-align:center;'>💊 Health Chat Assistant</h1>", unsafe_allow_html=True)
 st.markdown(
-    """
-    <style>
-    .stApp {
-        background: linear-gradient(120deg, #d0e7f9, #ffffff);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    .title {
-        font-size: 2.4rem;
-        font-weight: bold;
-        color: #0b3d91;
-        text-align: center;
-    }
-    .subtitle {
-        font-size: 1.1rem;
-        text-align: center;
-        margin-bottom: 1.5rem;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-st.markdown('<div class="title">💊 Health Chat Assistant</div>', unsafe_allow_html=True)
-st.markdown(
-    '<div class="subtitle">Ask health questions and get concise, professional answers</div>',
+    "<p style='text-align:center;'>Ask health questions and get concise answers</p>",
     unsafe_allow_html=True
 )
 
 # ---------------------------
 # Load Vector Store
 # ---------------------------
-with st.spinner("Loading health knowledge base..."):
+with st.spinner("Loading knowledge base..."):
     embeddings = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2"
     )
@@ -65,23 +42,23 @@ with st.spinner("Loading health knowledge base..."):
     retriever = vector_db.as_retriever(search_kwargs={"k": 3})
 
 # ---------------------------
-# Initialize Gemini LLM (CORRECT)
+# Initialize Gemini LLM (FINAL SAFE WAY)
 # ---------------------------
 llm = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash",
-    temperature=0.2,
-    api_key=os.getenv("GEMINI_API_KEY")
+    temperature=0.2
 )
+# ⚠️ NO api_key OR google_api_key PASSED
 
 # ---------------------------
-# Prompt Template
+# Prompt
 # ---------------------------
 prompt = PromptTemplate(
     input_variables=["context", "question"],
     template="""
 You are a medical information assistant.
-Provide general health information only.
-Do NOT provide diagnosis or prescriptions.
+Provide general information only.
+Do NOT diagnose or prescribe.
 
 Context:
 {context}
@@ -90,13 +67,13 @@ Question:
 {question}
 
 Answer in no more than 3 sentences.
-If the context is insufficient, say:
-"I'm sorry, I cannot provide an answer based on the available health documents."
+If insufficient context, say:
+"I'm sorry, I cannot provide an answer based on the available documents."
 """
 )
 
 # ---------------------------
-# Build RAG Chain
+# RAG Chain
 # ---------------------------
 rag_chain = (
     {"context": retriever, "question": RunnablePassthrough()}
@@ -115,14 +92,12 @@ if question:
             response = rag_chain.invoke({"question": question})
 
             st.markdown("### ✅ Answer")
-            answer_text = response.content
-
-            for sentence in answer_text.split(". "):
-                if sentence.strip():
-                    st.markdown(f"- {sentence.strip()}.")
+            for s in response.content.split(". "):
+                if s.strip():
+                    st.markdown(f"- {s.strip()}.")
 
         except Exception as e:
-            st.error("❌ Error while generating response")
+            st.error("❌ Error generating response")
             st.exception(e)
 
 # ---------------------------
@@ -130,18 +105,9 @@ if question:
 # ---------------------------
 st.markdown(
     """
-    <div style="
-        font-size: 16px;
-        font-weight: bold;
-        color: #7f1d1d;
-        background-color: #fee2e2;
-        padding: 12px;
-        border-radius: 10px;
-        margin-top: 20px;
-    ">
+    <div style="color:#7f1d1d; background:#fee2e2; padding:10px; border-radius:8px;">
     ⚠️ Disclaimer: This chatbot provides general health information only.
     It is not a substitute for professional medical advice.
-    Always consult a qualified healthcare provider.
     </div>
     """,
     unsafe_allow_html=True
