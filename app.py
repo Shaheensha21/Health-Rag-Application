@@ -1,5 +1,7 @@
 # app.py
+import os
 import streamlit as st
+
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -9,22 +11,23 @@ from langchain_core.runnables import RunnablePassthrough
 # ---------------------------
 # Page Config
 # ---------------------------
-st.set_page_config(page_title="💊 Health Chat Assistant", page_icon="💊", layout="centered")
+st.set_page_config(
+    page_title="💊 Health Chat Assistant",
+    page_icon="💊",
+    layout="centered"
+)
 
 # ---------------------------
-# Custom CSS for Styling
+# Custom CSS
 # ---------------------------
 st.markdown(
     """
     <style>
-    /* Background gradient */
     .stApp {
         background: linear-gradient(120deg, #d0e7f9, #ffffff);
         color: #1f2937;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-
-    /* Title styling */
     .title {
         font-size: 2.5rem;
         font-weight: bold;
@@ -32,56 +35,53 @@ st.markdown(
         text-align: center;
         margin-bottom: 0.2rem;
     }
-
-    /* Subtitle styling */
     .subtitle {
         font-size: 1.2rem;
-        color: #1f2937;
         text-align: center;
         margin-bottom: 1.5rem;
     }
-
-    /* Input box styling */
     div.stTextInput>div>div>input {
         height: 50px;
         font-size: 1.1rem;
         border-radius: 10px;
         padding-left: 15px;
     }
-
-    /* Answer box */
-    .stMarkdown {
-        font-size: 1.05rem;
-        line-height: 1.6;
-        padding: 0.5rem;
-    }
-
     </style>
     """,
     unsafe_allow_html=True
 )
 
 # ---------------------------
-# Custom Title & Subtitle
+# Title
 # ---------------------------
 st.markdown('<div class="title">💊 Health Chat Assistant</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Ask your health-related questions and get concise, professional answers!</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="subtitle">Ask your health-related questions and get concise, professional answers</div>',
+    unsafe_allow_html=True
+)
 
 # ---------------------------
-# Load Prebuilt Vector DB
+# Load Vector DB
 # ---------------------------
-with st.spinner("Loading knowledge base..."):
-    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-    vector_db = Chroma(persist_directory="health_rag_db", embedding_function=embeddings)
+with st.spinner("Loading health knowledge base..."):
+    embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
+
+    vector_db = Chroma(
+        persist_directory="health_rag_db",
+        embedding_function=embeddings
+    )
+
     retriever = vector_db.as_retriever(search_kwargs={"k": 3})
 
 # ---------------------------
-# Initialize LLM
+# Initialize Gemini LLM
 # ---------------------------
 llm = ChatGoogleGenerativeAI(
-    model="models/gemini-2.5-flash",
+    model="gemini-1.5-flash",
     temperature=0.2,
-    api_key= "AIzaSyCiKRagyKU_KOCx3Vb833ztzLZIu1rHYIg"
+    google_api_key=os.getenv("GEMINI_API_KEY")
 )
 
 # ---------------------------
@@ -90,14 +90,18 @@ llm = ChatGoogleGenerativeAI(
 prompt = PromptTemplate(
     input_variables=["context", "question"],
     template="""
-Use the following context to answer the question:
+You are a medical information assistant.
+Provide general health information only.
+Do NOT provide diagnosis or prescriptions.
 
+Context:
 {context}
 
-Question: {question}
+Question:
+{question}
 
 Answer in no more than 3 sentences.
-If the context does not contain relevant health information, respond:
+If the context does not contain relevant information, say:
 "I'm sorry, I cannot provide an answer based on the available health documents."
 """
 )
@@ -114,40 +118,42 @@ rag_chain = (
 # ---------------------------
 # User Input
 # ---------------------------
-question = st.text_input("Enter your health-related query here:")
+question = st.text_input("Enter your health-related query:")
 
 if question:
     with st.spinner("Generating answer..."):
-        response = rag_chain.invoke(question)
+        try:
+            response = rag_chain.invoke({"question": question})
 
-        # ---------------------------
-        # Answer Display Box
-        # ---------------------------
-        st.markdown("### Answer:")
-        answer_text = response.content
-        for line in answer_text.split(". "):
-            if line.strip():
-                st.markdown(f"- {line.strip()}.")
+            st.markdown("### ✅ Answer")
+            answer_text = response.content
 
-        # ---------------------------
-        # Professional Disclaimer
-        # ---------------------------
-        # ---------------------------
-# Professional Disclaimer
+            for sentence in answer_text.split(". "):
+                if sentence.strip():
+                    st.markdown(f"- {sentence.strip()}.")
+
+        except Exception as e:
+            st.error("❌ An error occurred while generating the response.")
+            st.exception(e)
+
+# ---------------------------
+# Disclaimer
 # ---------------------------
 st.markdown(
     """
     <div style="
-        font-size: 18px; 
-        font-weight: bold; 
-        color: #b91c1c; 
-        background-color: #0000f; 
-        padding: 10px; 
-        border-radius: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        color: #7f1d1d;
+        background-color: #fee2e2;
+        padding: 12px;
+        border-radius: 10px;
+        margin-top: 20px;
     ">
-    ⚠️ **Disclaimer:** The information provided by this chatbot is generated by an AI system using a curated health knowledge base.  
-    Always seek the guidance of a qualified healthcare provider with any questions regarding your health or medical conditions.
+    ⚠️ Disclaimer: This chatbot provides general health information only.
+    It is not a substitute for professional medical advice, diagnosis, or treatment.
+    Always consult a qualified healthcare provider.
     </div>
     """,
     unsafe_allow_html=True
-        )
+)
