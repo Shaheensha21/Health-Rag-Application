@@ -44,7 +44,7 @@ with st.spinner("Loading knowledge base..."):
 # Initialize Gemini (SAFE WAY)
 # ---------------------------
 llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash",
+    model="gemini-2.5-flash",
     temperature=0.2
 )
 # 🔐 API key is read automatically from environment (Streamlit Secrets)
